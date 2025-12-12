@@ -1,1 +1,0 @@
-tokio::sync::MutexGuard<'_, std::collections::HashMap<std::string::String, roomwebserver::server::Room>>

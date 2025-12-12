@@ -1,2 +1,0 @@
-actix_web::web::Data<std::sync::Arc<tokio::sync::Mutex<std::collections::HashMap<std::string::String, std::sync::Arc<tokio::sync::Mutex<roomwebserver::server::Room>>>>>>
-actix_web::web::Data<std::sync::Arc<tokio::sync::Mutex<std::collections::HashMap<std::string::String, std::sync::Arc<tokio::sync::Mutex<roomwebserver::server::Room>>>>>>: actix_web::dev::Transform<actix_web::app_service::AppRouting, actix_web::dev::ServiceRequest>

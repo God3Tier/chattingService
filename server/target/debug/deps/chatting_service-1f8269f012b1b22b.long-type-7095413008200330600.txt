@@ -1,1 +1,0 @@
-std::result::Result<std::sync::MutexGuard<'_, std::collections::HashMap<std::string::String, std::vec::Vec<std::sync::Arc<std::sync::Mutex<user::User>>>>>, std::sync::PoisonError<std::sync::MutexGuard<'_, std::collections::HashMap<std::string::String, std::vec::Vec<std::sync::Arc<std::sync::Mutex<user::User>>>>>>>

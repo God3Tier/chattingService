@@ -1,1 +1,0 @@
-impl std::future::Future<Output = tokio::sync::MutexGuard<'_, std::collections::HashMap<std::string::String, std::vec::Vec<std::sync::Arc<tokio::sync::Mutex<user::User>>>>>>
