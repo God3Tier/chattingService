@@ -1,0 +1,14 @@
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/deps/serde-b0a6ace832d5e8cf.d: /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/josephyau/Documents/Projects/chatting_service/target/debug/build/serde-be1a7495ed7a9036/out/private.rs
+
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/deps/libserde-b0a6ace832d5e8cf.rlib: /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/josephyau/Documents/Projects/chatting_service/target/debug/build/serde-be1a7495ed7a9036/out/private.rs
+
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/deps/libserde-b0a6ace832d5e8cf.rmeta: /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/josephyau/Documents/Projects/chatting_service/target/debug/build/serde-be1a7495ed7a9036/out/private.rs
+
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/build/serde-be1a7495ed7a9036/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/josephyau/Documents/Projects/chatting_service/target/debug/build/serde-be1a7495ed7a9036/out

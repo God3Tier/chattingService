@@ -1,0 +1,1 @@
+(dyn futures_core::stream::Stream<Item = std::result::Result<actix_web::web::Bytes, actix_web::error::PayloadError>> + 'static)

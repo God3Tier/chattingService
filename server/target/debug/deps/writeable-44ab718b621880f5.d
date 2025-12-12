@@ -1,0 +1,10 @@
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/deps/writeable-44ab718b621880f5.d: /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/lib.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/cmp.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/impls.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/ops.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/parts_write_adapter.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/try_writeable.rs
+
+/Users/josephyau/Documents/Projects/chatting_service/target/debug/deps/libwriteable-44ab718b621880f5.rmeta: /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/lib.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/cmp.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/impls.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/ops.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/parts_write_adapter.rs /Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/try_writeable.rs
+
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/lib.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/cmp.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/impls.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/ops.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/parts_write_adapter.rs:
+/Users/josephyau/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/writeable-0.6.2/src/try_writeable.rs:

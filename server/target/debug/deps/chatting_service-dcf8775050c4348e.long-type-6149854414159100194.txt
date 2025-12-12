@@ -1,0 +1,1 @@
+impl std::future::Future<Output = std::option::Option<std::result::Result<actix_ws::Message, actix_ws::ProtocolError>>>

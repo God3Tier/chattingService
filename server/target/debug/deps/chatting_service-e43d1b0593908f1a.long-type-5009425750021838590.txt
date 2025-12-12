@@ -1,0 +1,1 @@
+fn(usize) -> (tokio::sync::mpsc::Sender<_>, tokio::sync::mpsc::Receiver<_>) {tokio::sync::mpsc::channel::<_>}

@@ -1,0 +1,1 @@
+std::result::Result<actix_web::HttpResponse, std::boxed::Box<(dyn std::error::Error + 'static)>>

@@ -1,0 +1,1 @@
+for<'a> fn(&'a std::sync::Arc<_, _>) -> std::sync::Arc<_, _> {<std::sync::Arc<_, _> as std::clone::Clone>::clone}

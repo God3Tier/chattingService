@@ -1,0 +1,1 @@
+std::sync::Arc<tokio::sync::Mutex<std::collections::HashMap<std::string::String, std::sync::Arc<tokio::sync::Mutex<roomwebserver::server::Room>>>>>

@@ -1,0 +1,1 @@
+bytestring::ByteString: std::convert::From<std::result::Result<std::string::String, serde_json::Error>>
