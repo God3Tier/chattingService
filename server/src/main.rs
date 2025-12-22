@@ -17,7 +17,6 @@ type RoomMap = Arc<Mutex<HashMap<String, Arc<Mutex<Room>>>>>;
 type UserMap = Arc<Mutex<HashMap<String, Vec<Arc<Mutex<User>>>>>>;
 type Err = Box<dyn std::error::Error>;
 
-
 async fn delog_rooms(rooms: &RoomMap) {
     let mut rooms = rooms.lock().await;
 
@@ -39,23 +38,36 @@ async fn delog_rooms(rooms: &RoomMap) {
 
 async fn delog_user(users: &UserMap) {
     let mut remove_user = Vec::new();
-    
-    let user_lock = users.lock().await;
-    let room_names: Vec<&String> = user_lock.keys().collect();
-    
+
+    let mut user_lock = users.lock().await;
+    let get_room_keys = user_lock.clone();
+    let room_names: Vec<&String> = get_room_keys.keys().collect();
+
     for room_name in room_names {
-        for user in user_lock.get(room_name).unwrap() {
+        for (indx, user) in user_lock.get(room_name).unwrap().iter().enumerate() {
             println!("Attempting to take the lock during usewr sweep");
             let temp_lock = user.lock().await;
             println!("Successfully taken the lock");
             if temp_lock.disconnected {
                 println!("Deleting user: {:?}", users);
-                remove_user.push((room_name, users));
+                remove_user.push((room_name, indx));
             }
         }
     }
-    
-    
+
+    for (room_name, indx) in remove_user {
+        let removing_vec = user_lock
+            .get_mut(room_name)
+            // Get rid of this unwrap later
+            .unwrap();
+        removing_vec.remove(indx);
+        
+        if removing_vec.is_empty() {
+            user_lock.remove(room_name);
+        }
+    }
+
+    println!("User Mapping state : {user_lock:?}")
 }
 
 #[actix_web::main]
@@ -83,7 +95,6 @@ async fn main() -> std::io::Result<()> {
             interval.tick().await;
         }
     });
-
 
     HttpServer::new(move || {
         App::new()

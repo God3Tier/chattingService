@@ -91,9 +91,10 @@ impl User {
         // }
         // let room_info =  user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
         rt::spawn(async move {
-            let mut user = user.lock().await;
-            let borrow_username = Arc::clone(&user.username);
-            let room_info =  user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
+            let guard_user = user.lock().await;
+            let borrow_username = Arc::clone(&guard_user.username);
+            let room_info =  guard_user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
+            drop(guard_user);
             while let Some(msg) = write_session.recv().await {
                 if shutdown_rx_2.has_changed().unwrap_or_else(|e| {
                     println!("Channel has already been closed err {e:?}!");
@@ -132,12 +133,18 @@ impl User {
             println!("Attempting to claim room");
             let mut borrow_room = room.lock().await;
             println!("Successfully claimed room");
-            borrow_room.disconnect_user(user.user_id).await.unwrap_or_else(|e| {
+            println!("Attempted to claim user");
+            let mut guard_user = user.lock().await;
+            println!("Successfully able to claim user");
+            borrow_room.disconnect_user(guard_user.user_id).await.unwrap_or_else(|e| {
                 println!("Unable to close disconnect user from room because of {e:?}")
+            });
+            guard_user.disconnect_user().await.unwrap_or_else(|e| {
+                println!("Unable to close user because of {e:?}")
             });
             println!("Successfully disconnected user from room");
             drop(borrow_room);
-            drop(user);
+            drop(guard_user);
             println!("Closing receiver");
         });
     }
@@ -165,8 +172,6 @@ impl User {
 
     pub async fn disconnect_user(&mut self) -> Result<(), Err> {
         println!("Disconnecting user!");
-        self.user_session_tx.closed().await;
-        self.shutdown_tx.closed().await;
         self.disconnected = true;
         Ok(())
     }
