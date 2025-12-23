@@ -42,6 +42,9 @@ impl User {
         }
     }
 
+    /*
+     * Asynchronously spawns 2 threads to manage both user sending of message 1
+     */
     pub async fn spawn_user_threads(
         user: Arc<Mutex<User>>,
         mut session: Session,
@@ -84,12 +87,7 @@ impl User {
             
         });
 
-        // let room_info = user.room_sender.as_ref();
-        // while room_info.is_none() {
-        //     println!("Waiting for sender to be spawned");
-        //     thread::sleep(Duration::from_secs(1));
-        // }
-        // let room_info =  user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
+
         rt::spawn(async move {
             let guard_user = user.lock().await;
             let borrow_username = Arc::clone(&guard_user.username);
@@ -153,6 +151,9 @@ impl User {
         self.room_sender = Some(room_sender)
     }
 
+    /*
+     * What is the point of this function? Still quite unsure 
+     */
     pub async fn send_message(&self, msg: String) -> Result<(), Err> {
         let sender = self.room_sender.as_ref();
 
@@ -170,9 +171,15 @@ impl User {
         Ok(())
     }
 
+    /*
+     * Not sure what else this is supposed to do other than lock it 
+     */
     pub async fn disconnect_user(&mut self) -> Result<(), Err> {
         println!("Disconnecting user!");
         self.disconnected = true;
+        self.shutdown_tx.send(true).unwrap_or_else(|e|{
+            println!("Unable to send shutdown message from the receiver {e:?}");
+        });
         Ok(())
     }
 }

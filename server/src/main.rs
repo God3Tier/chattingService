@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use actix_web::{App, HttpServer, web};
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex};
 
 use crate::{
     roomwebserver::{controller, server::Room},
@@ -67,7 +67,7 @@ async fn delog_user(users: &UserMap) {
         }
     }
 
-    println!("User Mapping state : {user_lock:?}")
+    // println!("User Mapping state : {user_lock:?}")
 }
 
 #[actix_web::main]
