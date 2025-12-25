@@ -12,7 +12,7 @@ use crate::{
     dto::RoomInfoDTO,
     message::Message,
     roomwebserver::server::Room,
-    user::{self, User},
+    user::{User},
 };
 
 // This function is to establish the connection between the client and the server room
@@ -95,6 +95,7 @@ pub async fn get_user_connections(
     users: web::Data<UserMap>,
 ) -> HttpResponse {
     let users = users.lock().await;
+    let rooms = rooms.lock().await;
     HttpResponse::Ok().body(format!(
         "User connections: \n{users:?}\n Available rooms: \n {rooms:?}"
     ))
