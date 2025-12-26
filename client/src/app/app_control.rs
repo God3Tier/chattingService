@@ -1,7 +1,16 @@
-use ratatui::{DefaultTerminal, widgets::Widget};
+use ratatui::{DefaultTerminal, widgets::{ StatefulWidget, Widget}};
 use tokio::{io, sync::mpsc::Receiver};
 
-use crate::app::appstate::AppState;
+use crate::app::{
+    appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom
+};
+
+#[derive(Debug)]
+enum AppState {
+    Waiting,
+    RoomConnected,
+    Closed,
+}
 
 #[derive(Debug)]
 pub struct App {
@@ -24,7 +33,6 @@ impl App {
             match &self.appstate {
                 AppState::Waiting => {}
                 AppState::RoomConnected => {}
-
                 AppState::Closed => {
                     break;
                 }
@@ -33,11 +41,11 @@ impl App {
         Ok(())
     }
 
-    fn as_widget(&self) -> impl Widget + '_ {
+    fn as_widget(&self) -> AppWidget {
         match self.appstate {
-            AppState::Waiting => return WaitingWidget,
-            AppState::RoomConnected => {}
-            AppState::Closed => {}
+            AppState::Waiting => return AppWidget::Waiting(WaitingRoom::new()),
+            AppState::RoomConnected => return AppWidget::RoomConnected(Room::new()),
+            AppState::Closed => return AppWidget::Closed
         }
     }
 

@@ -7,6 +7,7 @@ use crate::{Err, message::Message, user::{User}};
 #[derive(Debug)]
 pub struct Room {
     room_id: String, 
+    messages: Vec<Arc<Message>>,
     members: HashMap<u32, (mpsc::Sender<Arc<Message>>, sync::watch::Sender<bool>)>,
     sender: Sender<Arc<Message>>, 
     pub is_closed: bool
@@ -17,6 +18,8 @@ impl Room {
         let (room_tx, room_rx) = mpsc::channel::<Arc<Message>>(100);
         let room = Room {
             room_id,
+            // Temporary placeholder until a loading parser has been made
+            messages: Vec::new(),
             members: HashMap::new(),
             sender: room_tx,
             is_closed: false
@@ -31,15 +34,21 @@ impl Room {
         println!("Able to unlock user");
         user.set_room(self.sender.clone());
         self.members.insert(user.user_id, (user.user_session_tx.clone(), user.shutdown_tx.clone()));
+    
+        
+        user.send_intiial_messages(&self.messages).await.unwrap_or_else(|e| {
+            println!("Unable to send all messages from the room stored prior {e:?}");
+        });
         drop(user);
         println!("Successfully dropped the user");
     }
     
     pub async fn run (room: Arc<Mutex<Room>>, mut room_rx: Receiver<Arc<Message>>) {
-        while let Some( msg) = room_rx.recv().await {
+        while let Some(msg) = room_rx.recv().await {
             let temp_read = msg.as_ref();
             println!("Received room message: {temp_read:?}");
-            let borrow_room = room.lock().await;
+            let mut borrow_room = room.lock().await;
+            borrow_room.messages.push(Arc::clone(&msg));
             let members = &borrow_room.members;
             for (id , user_session_tx) in members {
                 println!("Sending to user {id}");

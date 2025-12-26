@@ -154,18 +154,19 @@ impl User {
     /*
      * What is the point of this function? Still quite unsure 
      */
-    pub async fn send_message(&self, msg: String) -> Result<(), Err> {
+    pub async fn send_intiial_messages(&self, msgs: &Vec<Arc<Message>>) -> Result<(), Err> {
         let sender = self.room_sender.as_ref();
 
         if sender.is_none() {
             return Err("User not connected to the room yet".into());
         }
-
+        
         let sender = sender.unwrap();
-        let msg = Message::new(Arc::clone(&self.username), msg);
-
-        if sender.send(Arc::new(msg)).await.is_err() {
-            return Err("Unable to send message".into());
+        for msg in msgs {
+            if sender.send(Arc::clone(msg)).await.is_err() {
+                return Err("Unable to send message".into());
+            }
+            
         }
 
         Ok(())

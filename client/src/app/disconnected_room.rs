@@ -1,11 +1,14 @@
 use ratatui::{buffer::Buffer, layout::Rect, style::Stylize, text::Line, widgets::{Block, Borders, Paragraph, StatefulWidget, Widget}};
 
+#[derive(Debug)]
 pub struct WaitingRoom {
     pub buttons: [Rect; 4]
 }
 
 impl WaitingRoom {
-    
+    pub fn new() -> WaitingRoom {
+        WaitingRoom { buttons: () }
+    }
 }
 
 impl StatefulWidget for &WaitingRoom {
@@ -33,6 +36,7 @@ impl StatefulWidget for &WaitingRoom {
         paragraph.render(area, buf);
         
         
+        let 
 
     }
 } 
