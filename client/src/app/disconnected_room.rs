@@ -2,19 +2,25 @@ use ratatui::{buffer::Buffer, layout::Rect, style::Stylize, text::Line, widgets:
 
 #[derive(Debug)]
 pub struct WaitingRoom {
-    pub buttons: [Rect; 4]
+    pub buttons: [Rect; 4],
+    pub room: Option<String>
 }
 
 impl WaitingRoom {
     pub fn new() -> WaitingRoom {
-        WaitingRoom { buttons: () }
+        WaitingRoom {
+            buttons: [Rect::new(0, 0 ,0, 0); 4],
+            room: None
+        }
+    }
+
+    fn handle_event() {
+
     }
 }
 
-impl StatefulWidget for &WaitingRoom {
-    type State = WaitingRoom;
-    
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut WaitingRoom) {
+impl Widget for &WaitingRoom {
+    fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from("Welcome to data leaker room messaging service").bold();
         let instructions = Line::from(
             vec![
@@ -26,17 +32,17 @@ impl StatefulWidget for &WaitingRoom {
                 "Custom room : Coming soon".into()
             ]
         );
-        
+
         let paragraph = Paragraph::new(title).block(
             Block::default().title(instructions)
                 .borders(Borders::ALL)
         );
-        
-        
+
+
         paragraph.render(area, buf);
-        
-        
-        let 
+
+
+        let button
 
     }
-} 
+}

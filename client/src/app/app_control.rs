@@ -1,9 +1,10 @@
-use ratatui::{DefaultTerminal, widgets::{ StatefulWidget, Widget}};
+use ratatui::{
+    DefaultTerminal,
+    widgets::{StatefulWidget, Widget},
+};
 use tokio::{io, sync::mpsc::Receiver};
 
-use crate::app::{
-    appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom
-};
+use crate::app::{appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom};
 
 #[derive(Debug)]
 enum AppState {
@@ -12,40 +13,69 @@ enum AppState {
     Closed,
 }
 
+pub enum AppAction {
+    None,
+    GoToWaitingRoom,
+    GoToRoom(String),
+    Quit,
+}
+
 #[derive(Debug)]
 pub struct App {
     appstate: AppState,
-    app_rx: Receiver<String>,
     room_name: Option<String>,
+    waiting: WaitingRoom,
+    room: Option<Room>,
 }
 
 impl App {
-    pub fn new(app_rx: Receiver<String>) -> App {
+    pub fn new() -> App {
         App {
             appstate: AppState::Waiting,
-            app_rx,
             room_name: None,
+            waiting: WaitingRoom::new(),
+            room: None,
         }
     }
 
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         loop {
             match &self.appstate {
-                AppState::Waiting => {}
-                AppState::RoomConnected => {}
                 AppState::Closed => {
                     break;
+                }
+                _ => {
+                    terminal.draw(|f| {
+                        let area = f.area();
+                        let buffer = f.buffer_mut();
+                        let widget = self.as_widget();
+                        widget.render(area, buffer);
+                    });
+                    
+                    self.handle_event(); 
                 }
             }
         }
         Ok(())
     }
 
-    fn as_widget(&self) -> AppWidget {
+    fn as_widget(&mut self) -> AppWidget {
         match self.appstate {
-            AppState::Waiting => return AppWidget::Waiting(WaitingRoom::new()),
-            AppState::RoomConnected => return AppWidget::RoomConnected(Room::new()),
-            AppState::Closed => return AppWidget::Closed
+            AppState::Waiting => return AppWidget::Waiting(&mut self.waiting),
+            AppState::RoomConnected => match &mut self.room {
+                Some(room) => {
+                    return AppWidget::RoomConnected(room);
+                }
+                None => return AppWidget::Waiting(&mut self.waiting),
+            },
+            AppState::Closed => return AppWidget::Closed,
+        }
+    }
+    
+    fn handle_event(&mut self) {
+        // Handle when the room is empty 
+        if self.room_name.is_none() {
+            
         }
     }
 

@@ -1,18 +1,29 @@
-use ratatui::{buffer::Buffer, layout::Rect};
+use ratatui::{
+    buffer::Buffer, 
+    layout::Rect, 
+    prelude::{
+        Widget, 
+        StatefulWidget
+    }
+};
 
-use crate::app::{connected_room::Room, disconnected_room::WaitingRoom};
+use crate::app::{
+    connected_room::Room, 
+    disconnected_room::WaitingRoom
+};
 
 #[derive(Debug)]
-pub enum AppWidget {
-    Waiting(WaitingRoom),
-    RoomConnected(Room),
+pub enum AppWidget<'a> {
+    Waiting(&'a mut WaitingRoom),
+    RoomConnected(&'a mut Room),
     Closed
 }
 
 
-impl AppWidget {
-    fn render(self, rect: Rect, buffer: &mut Buffer) {
+impl<'a> AppWidget<'a> {
+    pub fn render(self, rect: Rect, buffer: &mut Buffer) {
         match self {
+            // TODO: Will handle proper state change later 
             AppWidget::Waiting(w) => w.render(rect, buffer),
             AppWidget::RoomConnected(w) => w.render(rect, buffer), 
             AppWidget::Closed => return

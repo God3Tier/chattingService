@@ -99,6 +99,7 @@ dependencies = [
  "dotenv",
  "futures-util",
  "ratatui",
+ "ratatui-crossterm",
  "serde",
  "serde_json",
  "tokio",
@@ -774,6 +775,12 @@ dependencies = [
  "unicode-truncate",
  "unicode-width 0.2.0",
 ]
+
+[[package]]
+name = "ratatui-crossterm"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5018e3906f4909e15384e449159bf8a9b67a800ea571ec87bb0f9b8fef011bb9"
 
 [[package]]
 name = "redox_syscall"
