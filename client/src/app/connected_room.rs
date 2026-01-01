@@ -5,7 +5,7 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     widgets::{Block, Borders, Paragraph, Widget},
 };
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::{mpsc::{self, Receiver, Sender}, watch};
 
 #[derive(Debug)]
 pub struct Room {
@@ -17,6 +17,7 @@ pub struct Room {
     input: String,
     user_input_sx: Sender<String>,
     server_message_rx: Receiver<Response>,
+    closing_room_sx: tokio::sync::watch::Sender<bool>,
     pub app_action: AppAction
 }
 
@@ -31,8 +32,11 @@ impl Room {
         let (user_input_sx, user_input_rx) = mpsc::channel(100);
         let (server_message_sx, server_message_rx) = mpsc::channel::<Response>(100);
         // TODO: Fix this later
-        websocket_function::start_listening(url, room_id.clone(), user_input_rx, server_message_sx)
-            .await;
+        let (closing_room_sx, closing_room_rx) = watch::channel(true);
+        if websocket_function::start_listening(url, closing_room_rx, user_input_rx, server_message_sx)
+            .await.is_err() {
+                return Err("Unable to staRT WEBSOCKET".into())
+            }
         
         Ok(Room {
             room_id,
@@ -42,6 +46,7 @@ impl Room {
             input: "".to_string(),
             user_input_sx,
             server_message_rx,
+            closing_room_sx,
             app_action: AppAction::None
         })
     }
