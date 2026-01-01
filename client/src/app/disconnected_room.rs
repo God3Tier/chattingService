@@ -1,21 +1,29 @@
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::{buffer::Buffer, layout::Rect, style::Stylize, text::Line, widgets::{Block, Borders, Paragraph, StatefulWidget, Widget}};
+
+use crate::app::app_control::AppAction;
 
 #[derive(Debug)]
 pub struct WaitingRoom {
     pub buttons: [Rect; 4],
-    pub room: Option<String>
 }
 
 impl WaitingRoom {
     pub fn new() -> WaitingRoom {
         WaitingRoom {
             buttons: [Rect::new(0, 0 ,0, 0); 4],
-            room: None
         }
     }
 
-    fn handle_event() {
-
+    pub fn handle_keys(&mut self, key: KeyEvent) -> AppAction {
+        match key.code {
+            KeyCode::Char('1') =>  AppAction::GoToRoom("Room 1".to_string()),
+            KeyCode::Char('2') =>  AppAction::GoToRoom("Room 2".to_string()),
+            KeyCode::Char('3') =>  AppAction::GoToRoom("Room 3".to_string()),
+            KeyCode::Char('4') =>  AppAction::GoToRoom("Room 4".to_string()),
+            KeyCode::Char('q') =>  AppAction::Quit,
+            _ =>  AppAction::None
+        }
     }
 }
 
@@ -40,9 +48,7 @@ impl Widget for &WaitingRoom {
 
 
         paragraph.render(area, buf);
-
-
-        let button
-
+        
+        
     }
 }

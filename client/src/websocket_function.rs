@@ -1,16 +1,19 @@
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{SinkExt, StreamExt, TryFutureExt};
 use tokio::sync::mpsc::{Receiver, Sender};
-use tokio_tungstenite::{connect_async, tungstenite::Message};
+use tokio_tungstenite::{connect_async};
 
-use crate::{response::Response};
+use crate::{Err, response::Response};
 
-pub async fn start_listening(url: String, room_id: String, mut user_input_rx: Receiver<String>, server_message_sx: Sender<Response>) {
+pub async fn start_listening(url: String, room_id: String, mut user_input_rx: Receiver<String>, server_message_sx: Sender<Response>) -> Result<(), Err>{
     
-    let (ws_stream, response) = connect_async(&url)
-        .await
-        // Remove this panic for a better way to handle the stream
-        .unwrap_or_else(|e| panic!("Unable to connect to provided room \n {e:?}"));
+    let connection = connect_async(&url)
+        .await;
     
+    if connection.is_err() {
+        return Err("Unable to connect to the url provided".into())
+    }
+    
+    let (ws_stream, response) = connection.unwrap();
     
     println!("{response:?}");
     println!("Successfully connected to room: {room_id}");
@@ -27,7 +30,7 @@ pub async fn start_listening(url: String, room_id: String, mut user_input_rx: Re
             // This is for the time being until I find a better way to display the information (preferably tui for now)
             match Response::new(data) {
                 Ok(response) => {
-                    server_message_sx.send(response);
+                    server_message_sx.send(response).unwrap_or_else(|e| println!("Unable to send message"));
                     
                 }
                 Err(e) => {
@@ -49,5 +52,7 @@ pub async fn start_listening(url: String, room_id: String, mut user_input_rx: Re
             .await
             .unwrap_or_else(|e| println!("Unable to send the message {e:?}"))
     }
+    
+    Ok(())
     
 }

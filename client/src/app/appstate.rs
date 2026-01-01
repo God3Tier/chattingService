@@ -3,7 +3,6 @@ use ratatui::{
     layout::Rect, 
     prelude::{
         Widget, 
-        StatefulWidget
     }
 };
 

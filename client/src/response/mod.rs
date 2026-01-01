@@ -11,7 +11,7 @@ pub struct Response {
 impl Response {
     pub fn new(json_bytes: Bytes) -> Result<Response, Err> {
         let json_string = json_bytes.trim_ascii();
-        match serde_json::from_slice::<Response>(&json_string) {
+        match serde_json::from_slice::<Response>(json_string) {
             Ok(res) => {
                 return Ok(res);
             }, 

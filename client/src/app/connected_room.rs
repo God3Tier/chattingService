@@ -1,9 +1,9 @@
-use crate::{app::app_control::AppAction, response::Response, websocket_function};
-use crossterm::event::{self, Event, KeyCode};
+use crate::{Err, app::app_control::AppAction, response::Response, websocket_function};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    widgets::Widget,
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -17,6 +17,7 @@ pub struct Room {
     input: String,
     user_input_sx: Sender<String>,
     server_message_rx: Receiver<Response>,
+    pub app_action: AppAction
 }
 
 #[derive(Debug)]
@@ -26,13 +27,14 @@ enum InputMode {
 }
 
 impl Room {
-    pub async fn new(room_id: String, url: String) -> Room {
+    pub async fn new(room_id: String, url: String) -> Result<Room, Err> {
         let (user_input_sx, user_input_rx) = mpsc::channel(100);
         let (server_message_sx, server_message_rx) = mpsc::channel::<Response>(100);
         // TODO: Fix this later
         websocket_function::start_listening(url, room_id.clone(), user_input_rx, server_message_sx)
             .await;
-        Room {
+        
+        Ok(Room {
             room_id,
             messages: Vec::new(),
             character_indx: 0,
@@ -40,7 +42,8 @@ impl Room {
             input: "".to_string(),
             user_input_sx,
             server_message_rx,
-        }
+            app_action: AppAction::None
+        })
     }
 
     fn move_cursor_left(&mut self) {
@@ -76,19 +79,19 @@ impl Room {
         self.character_indx = 0;
     }
 
-    async fn read_message(&mut self) {
+    pub async fn read_message(&mut self) {
         while let Some(msg) = self.server_message_rx.recv().await {
             // Display the derived message here
             let sender = msg.sender.unwrap();
             let message = msg.content.unwrap();
-
             self.messages.push(format!("{sender}:{message}"));
         }
     }
 
     async fn submit_message(&mut self) {
         // I cba deal with th lifetimes clone for now
-        self.user_input_sx.send(self.input.clone());
+        self.user_input_sx.send(self.input.clone())
+            .await.unwrap_or_else(|e| println!("Unable to send message because of {e}"));
         self.input.clear();
         self.reset_cursor();
     }
@@ -105,9 +108,8 @@ impl Room {
         new_cursor_pos.clamp(0, self.input.chars().count())
     }
 
-    pub async fn handle_keys(&mut self) -> AppAction {
+    pub async fn handle_keys(&mut self, key: KeyEvent) -> AppAction {
         // Careful with this one if it is unable to re-read the terminal
-        if let Event::Key(key) = event::read().unwrap() {
             match self.input_mode {
                 InputMode::Normal => match key.code {
                     KeyCode::Char('e') => self.input_mode = InputMode::Editing,
@@ -126,7 +128,6 @@ impl Room {
                     _ => {}
                 },
             }
-        }
 
         AppAction::None
     }
@@ -144,6 +145,18 @@ impl Widget for &Room {
         
         let [help_area, input_area, message_area] = vertical.areas(area);
         
+        Paragraph::new(match self.input_mode {
+            InputMode::Editing => "Press escape to return to normal mode",
+            InputMode::Normal => "Press e to edit. Press q to join a different room"
+        }).render(help_area, buf);
         
+        Paragraph::new(self.messages.join("\n")).block(
+            Block::default().borders(Borders::ALL)
+                .title(self.room_id.as_str())
+        ).wrap(ratatui::widgets::Wrap { trim: false })
+        .render(message_area, buf);
+        
+        Paragraph::new(self.input.as_str())
+            .block(Block::default().borders(Borders::ALL).title("Input")).render(input_area, buf);
     }
 }
