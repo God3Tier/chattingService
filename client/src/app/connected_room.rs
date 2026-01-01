@@ -165,3 +165,10 @@ impl Widget for &Room {
             .block(Block::default().borders(Borders::ALL).title("Input")).render(input_area, buf);
     }
 }
+
+
+impl Drop for Room {
+    fn drop(&mut self)  {
+        self.closing_room_sx.send(true).unwrap();
+    }
+}
