@@ -34,14 +34,15 @@ pub struct App {
 
 impl App {
     pub fn new() -> App {
+        let base_url = std::env::var("BASE_URL").unwrap_or_else(|e| {
+            println!("Unable to get base url. defaulting to localhost");
+            "127.0.0.1".to_string()
+        });
         App {
             appstate: AppState::Waiting,
             waiting: WaitingRoom::new(),
             room: None,
-            url: std::env::var("BASE_URL").unwrap_or_else(|e| {
-                println!("Unable to get base url. defaulting to localhost");
-                "127.0.0.1".to_string()
-            })
+            url: base_url
         }
     }
 
@@ -54,9 +55,8 @@ impl App {
                 _ => {
                     terminal.draw(|f| {
                         let area = f.area();
-                        let buffer = f.buffer_mut();
                         let widget = self.as_widget();
-                        widget.render(area, buffer);
+                        widget.render(f, area);
                     }).unwrap();
                     
                     if event::poll(std::time::Duration::from_millis(16))? {
@@ -66,7 +66,6 @@ impl App {
                         }
                     }
                     
-            
                 }
             }
         }

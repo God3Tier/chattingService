@@ -20,6 +20,7 @@ async fn main() -> Result<(), std::io::Error> {
     // websocket_function::start_listening(url, room_id, app_sx).await;
     ratatui::restore();
     crossterm::terminal::disable_raw_mode()?;
+    println!("Clean up complete");
     app_result
 }
 

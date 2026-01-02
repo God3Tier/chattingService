@@ -9,14 +9,15 @@ pub struct Response {
     pub content: Option<String>
 }
 impl Response {
-    pub fn new(json_bytes: Bytes) -> Result<Response, Err> {
+    pub fn new(json_bytes: Bytes) -> Response {
         let json_string = json_bytes.trim_ascii();
         match serde_json::from_slice::<Response>(json_string) {
             Ok(res) => {
-                return Ok(res);
+                return res;
             }, 
             Err(e) => {
-                return Err("Faulty message parsing {e}".into());
+                println!("Unable to Read message");
+                Response { sender: None, content: None }
             }
         }
     }

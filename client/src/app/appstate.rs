@@ -1,9 +1,5 @@
 use ratatui::{
-    buffer::Buffer, 
-    layout::Rect, 
-    prelude::{
-        Widget, 
-    }
+    Frame, buffer::Buffer, layout::Rect, prelude::Widget
 };
 
 use crate::app::{
@@ -20,11 +16,11 @@ pub enum AppWidget<'a> {
 
 
 impl<'a> AppWidget<'a> {
-    pub fn render(self, rect: Rect, buffer: &mut Buffer) {
+    pub fn render(self, f: &mut Frame, rect: Rect) {
         match self {
             // TODO: Will handle proper state change later 
-            AppWidget::Waiting(w) => w.render(rect, buffer),
-            AppWidget::RoomConnected(w) => w.render(rect, buffer), 
+            AppWidget::Waiting(w) => w.render(f, rect),
+            AppWidget::RoomConnected(w) => w.render(rect, f.buffer_mut()), 
             AppWidget::Closed => return
         }
     }

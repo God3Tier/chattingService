@@ -33,6 +33,9 @@ impl Room {
         let (server_message_sx, server_message_rx) = mpsc::channel::<Response>(100);
         // TODO: Fix this later
         let (closing_room_sx, closing_room_rx) = watch::channel(true);
+        let temp_username = "guest".to_string();
+        let url = format!("ws://{url}/ws/joinroom?room_id={room_id}&username={temp_username}");
+        println!("Connecting to {}", url);
         if websocket_function::start_listening(url, closing_room_rx, user_input_rx, server_message_sx)
             .await.is_err() {
                 return Err("Unable to staRT WEBSOCKET".into())

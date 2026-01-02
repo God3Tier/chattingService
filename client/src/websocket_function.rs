@@ -10,6 +10,7 @@ pub async fn start_listening(url: String, ending_rx: tokio::sync::watch::Receive
         .await;
     
     if connection.is_err() {
+        println!("Cannot connect to server {:?}", connection.err());
         return Err("Unable to connect to the url provided".into())
     }
     
@@ -28,13 +29,10 @@ pub async fn start_listening(url: String, ending_rx: tokio::sync::watch::Receive
         read.for_each(|message| async {
             let data = message.unwrap().into_data();
             // This is for the time being until I find a better way to display the information (preferably tui for now)
-            match Response::new(data) {
-                Ok(response) => {
-                    let _ = server_message_sx.send(response);
-                    
-                }
-                Err(e) => {
-                }
+            let response = Response::new(data); {
+            server_message_sx.send(response).await.unwrap_or_else(|e| {
+                println!("Unable to send message because of {e}")
+            });
             }
         })
         .await;
