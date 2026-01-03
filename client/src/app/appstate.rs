@@ -13,7 +13,6 @@ pub enum AppWidget<'a> {
 impl<'a> AppWidget<'a> {
     pub fn render(self, f: &mut Frame, rect: Rect) {
         match self {
-            // TODO: Will handle proper state change later
             AppWidget::Waiting(w) => w.render(f, rect),
             AppWidget::RoomConnected(w) => {
                 w.render(f, rect);

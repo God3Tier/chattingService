@@ -20,7 +20,7 @@ enum AppState {
 pub enum AppAction {
     None,
     GoToWaitingRoom,
-    GoToRoom(String),
+    GoToRoom(String, String),
     Quit,
 }
 
@@ -92,7 +92,6 @@ impl App {
             AppState::Waiting => AppWidget::Waiting(&mut self.waiting),
             AppState::RoomConnected => match &mut self.room {
                 Some(room) => {
-                    // println!("Connecting to new room");
                     AppWidget::RoomConnected(room)
                 }
                 None => {
@@ -109,12 +108,13 @@ impl App {
                 self.room = None;
                 self.appstate = AppState::Waiting
             }
-            AppAction::GoToRoom(room_name) => {
-                println!("Going to a new room post connection");
-                let room = Room::new(room_name, self.url.to_owned());
+            AppAction::GoToRoom(room_name, username) => {
+                // println!("Going to a new room post connection");
+                let room = Room::new(room_name, self.url.to_owned(), username);
 
                 if room.is_err() {
-                    println!("Unable to create new room");
+                    // println!("Unable to create new room");
+                    // self.appstate = AppState::Waiting;
                     return;
                 }
 

@@ -1,18 +1,28 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    layout::{Rect},
     style::Stylize,
     text::Line,
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
 #[derive(Default)]
-pub struct RectangleInstructions;
+pub struct DisplayTextInput<'a> {
+    title: &'a str
+}
 
-impl Widget for &RectangleInstructions {
+impl<'a> DisplayTextInput<'a> {
+    pub fn new(title:&'a str) -> DisplayTextInput<'a> {
+        DisplayTextInput {
+            title
+        }
+    }
+}
+
+impl<'a> Widget for &DisplayTextInput<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(
-            "Welcome to data leaker room messaging service\nSelect a room to join,",
+            self.title
         )
         .bold();
         let main = Paragraph::new(title).block(Block::default().borders(Borders::ALL));

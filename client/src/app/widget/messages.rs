@@ -1,10 +1,8 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    text::{Line, Span},
-    widgets::{Block, Borders, ListItem, Paragraph, Widget},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
-use tokio::sync::MutexGuard;
 
 use crate::app::connected_room::InputMode;
 

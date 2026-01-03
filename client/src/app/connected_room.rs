@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 
 use crate::{
     Err,
@@ -6,18 +6,15 @@ use crate::{
     response::Response,
     websocket_function,
 };
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    widgets::{Block, Borders, Paragraph, Widget},
+    layout::{Rect},
+    widgets::{Widget},
 };
 use tokio::{
     sync::{
-        Mutex,
-        mpsc::{self, Receiver, Sender},
-        watch,
+        Mutex, mpsc::{self,Sender}, oneshot, watch
     },
     task,
 };
@@ -41,25 +38,26 @@ pub enum InputMode {
 }
 
 impl Room {
-    pub fn new(room_id: String, url: String) -> Result<Room, Err> {
+    pub fn new(room_id: String, url: String, username: String) -> Result<Room, Err> {
         let (user_input_sx, user_input_rx) = mpsc::channel(100);
         let (server_message_sx, mut server_message_rx) = mpsc::channel::<Response>(100);
-        // TODO: Fix this later
         let (closing_room_sx, closing_room_rx) = watch::channel(true);
-        let temp_username = "guest".to_string();
-        let url = format!("ws://{url}/ws/joinroom?room_id={room_id}&username={temp_username}");
+        let (startup_sx, mut startup_rx) = oneshot::channel();
+        let url = format!("ws://{url}/ws/joinroom?room_id={room_id}&username={username}");
+        
         // println!("Connecting to {}", url);
-
+        
         tokio::spawn(async move {
-            websocket_function::start_listening(
+            let result = websocket_function::start_listening(
                 url,
                 closing_room_rx,
                 user_input_rx,
                 server_message_sx,
             )
-            .await.unwrap_or_else(|e| {
-                println!("Unable to connect to server");
-            });
+            .await;
+            
+            let result = result.is_err();
+            let _ = startup_sx.send(result);
         });
 
         let messages = Arc::new(Mutex::new(Vec::new()));
@@ -84,6 +82,10 @@ impl Room {
             user_input_sx,
             closing_room_sx,
         };
+        
+        // if startup_rx.is_empty() {
+        //     return Err("Unable to start room".into());
+        // }
 
         Ok(room)
     }
