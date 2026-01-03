@@ -29,8 +29,8 @@ pub async fn start_listening(url: String, ending_rx: tokio::sync::watch::Receive
         read.for_each(|message| async {
             let data = message.unwrap().into_data();
             // This is for the time being until I find a better way to display the information (preferably tui for now)
-            let response = Response::new(data); {
-            server_message_sx.send(response).await.unwrap_or_else(|e| {
+            let res = Response::new(data); {
+            server_message_sx.send(res).await.unwrap_or_else(|e| {
                 println!("Unable to send message because of {e}")
             });
             }

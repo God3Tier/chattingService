@@ -3,9 +3,9 @@ use std::sync::Arc;
 use crossterm::event::{self, Event, KeyEvent};
 use ratatui::{
     DefaultTerminal,
-    widgets::{StatefulWidget, Widget},
+    widgets::{Clear},
 };
-use tokio::{io, sync::mpsc::Receiver};
+use tokio::{io, sync::{Mutex, mpsc::Receiver}};
 
 use crate::app::{self, appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom};
 
@@ -29,7 +29,7 @@ pub struct App {
     appstate: AppState,
     waiting: WaitingRoom,
     room: Option<Room>,
-    url: String
+    url: String,
 }
 
 impl App {
@@ -42,7 +42,7 @@ impl App {
             appstate: AppState::Waiting,
             waiting: WaitingRoom::new(),
             room: None,
-            url: base_url
+            url: base_url,
         }
     }
 
@@ -53,70 +53,75 @@ impl App {
                     break;
                 }
                 _ => {
-                    terminal.draw(|f| {
-                        let area = f.area();
-                        let widget = self.as_widget();
-                        widget.render(f, area);
-                    }).unwrap();
-                    
-                    if event::poll(std::time::Duration::from_millis(16))? {
-                        if let Event::Key(key) = event::read().unwrap() {
-                            let action = self.handle_key(key).await;
-                            self.handle_event(action).await; 
-                        }
+                    // println!("{:?}", self.appstate);
+                    let widget = self.as_widget();
+                    terminal
+                        .draw(|f| {
+                            let area = f.area();
+                            widget.render(f, area);
+                        })
+                        .unwrap();
+
+                    if event::poll(std::time::Duration::from_millis(16))?
+                        && let Event::Key(key) = event::read().unwrap()
+                    {
+                        let action = self.handle_key(key).await;
+                        self.handle_event(action).await;
                     }
-                    
                 }
             }
         }
         Ok(())
     }
-    
+
     async fn handle_key(&mut self, key: KeyEvent) -> AppAction {
         match self.appstate {
             AppState::Waiting => {
-                return self.waiting.handle_keys(key);
-            }, 
+                self.waiting.handle_keys(key)
+            }
             AppState::RoomConnected => {
-               let room =  self.room.as_mut().unwrap();
-               return room.handle_keys(key).await;
-            }, 
-            _ => return AppAction::None
+                let room = self.room.as_mut().unwrap();
+                return room.handle_keys(key).await;
+            }
+            _ => AppAction::None,
         }
     }
 
     fn as_widget<'a>(&'a mut self) -> AppWidget<'a> {
         match self.appstate {
-            AppState::Waiting =>  AppWidget::Waiting(&mut self.waiting),
+            AppState::Waiting => AppWidget::Waiting(&mut self.waiting),
             AppState::RoomConnected => match &mut self.room {
                 Some(room) => {
-                     return AppWidget::RoomConnected(room);
+                    // println!("Connecting to new room");
+                    AppWidget::RoomConnected(room)
                 }
-                None =>  AppWidget::Waiting(&mut self.waiting),
+                None => {
+                    AppWidget::None
+                },
             },
-            AppState::Closed =>  AppWidget::Closed,
+            AppState::Closed => AppWidget::Closed,
         }
     }
-    
+
     async fn handle_event(&mut self, app_action: AppAction) {
         match app_action {
             AppAction::GoToWaitingRoom => {
                 self.room = None;
                 self.appstate = AppState::Waiting
-            }, 
+            }
             AppAction::GoToRoom(room_name) => {
-                let room = Room::new(room_name, self.url.to_owned()).await;
-                
+                println!("Going to a new room post connection");
+                let room = Room::new(room_name, self.url.to_owned());
+
                 if room.is_err() {
                     println!("Unable to create new room");
                     return;
                 }
-                
-                let mut room = room.unwrap();
-                
-                room.read_message().await;
-                self.room = Some(room)
-            }, 
+
+                let room = room.unwrap();
+                self.room = Some(room);
+                self.appstate = AppState::RoomConnected;
+            }
             AppAction::Quit => {
                 self.exit();
             }
