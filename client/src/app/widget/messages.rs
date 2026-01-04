@@ -54,19 +54,15 @@ impl<'input_mode, 'messages, 'room_id, 'input> Widget
         })
         .render(help_area, buf);
 
-        let available_height = message_area
-            .height
-            .saturating_sub(2);
-        
+        let available_height = message_area.height.saturating_sub(2);
+
         let messages: Vec<String> = self
             .messages
             .iter()
             .enumerate()
-            .map(|(i, m)| {
-                format!("{i}: {m}")
-            })
+            .map(|(i, m)| format!("{i}: {m}"))
             .collect();
-        
+
         let visible_messages = if messages.len() > available_height as usize {
             messages[messages.len() - available_height as usize..].to_vec()
         } else {
