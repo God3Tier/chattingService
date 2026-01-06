@@ -1,4 +1,8 @@
-use std::{collections::HashMap, fmt, sync::Arc};
+use std::{
+    collections::HashMap,
+    fmt,
+    sync::{Arc, Weak},
+};
 
 use actix_web::web;
 use mongodb::{Collection, Database};
@@ -12,8 +16,8 @@ use crate::{Err, message::Message, user::User};
 #[derive(Debug)]
 pub struct Room {
     room_id: Arc<String>,
-    original_size: usize,
     messages: Vec<Arc<Message>>,
+    inital_messages: Vec<Arc<Message>>,
     members: HashMap<u32, (mpsc::Sender<Arc<Message>>, sync::watch::Sender<bool>)>,
     sender: Sender<Arc<Message>>,
     database: web::Data<Database>,
@@ -23,14 +27,14 @@ pub struct Room {
 impl Room {
     pub fn spawn_room(
         room_id: Arc<String>,
-        messages: Vec<Arc<Message>>,
+        inital_messages: Vec<Arc<Message>>,
         database: web::Data<Database>,
     ) -> (Room, Receiver<Arc<Message>>) {
         let (room_tx, room_rx) = mpsc::channel::<Arc<Message>>(100);
         let room = Room {
             room_id,
-            original_size: messages.len(),
-            messages,
+            inital_messages,
+            messages: Vec::new(),
             members: HashMap::new(),
             sender: room_tx,
             database,
@@ -50,7 +54,17 @@ impl Room {
             (user.user_session_tx.clone(), user.shutdown_tx.clone()),
         );
 
+        user.send_intiial_messages(&self.inital_messages)
+            .await
+            .unwrap_or_else(|e| {
+                println!("Unable to send all messages from the room stored prior {e:?}");
+            });
         user.send_intiial_messages(&self.messages)
+            .await
+            .unwrap_or_else(|e| {
+                println!("Unable to send all messages from the room stored prior {e:?}");
+            });
+        user.send_intiial_messages(&self.inital_messages)
             .await
             .unwrap_or_else(|e| {
                 println!("Unable to send all messages from the room stored prior {e:?}");
@@ -59,22 +73,24 @@ impl Room {
         println!("Successfully dropped the user");
     }
 
-    pub async fn run(room: Arc<Mutex<Room>>, mut room_rx: Receiver<Arc<Message>>) {
+    pub async fn run(room: Weak<Mutex<Room>>, mut room_rx: Receiver<Arc<Message>>) {
         while let Some(msg) = room_rx.recv().await {
             let temp_read = msg.as_ref();
             println!("Received room message: {temp_read:?}");
-            let mut borrow_room = room.lock().await;
-            borrow_room.messages.push(Arc::clone(&msg));
-            let members = &borrow_room.members;
-            for (id, user_session_tx) in members {
-                println!("Sending to user {id}");
-                let send_to = user_session_tx.0.clone();
-                send_to
-                    .send(Arc::clone(&msg))
-                    .await
-                    .unwrap_or_else(|_| println!("User {id} is unable to send message"));
+            if let Some(room) = room.upgrade() {
+                let mut borrow_room = room.lock().await;
+                borrow_room.messages.push(Arc::clone(&msg));
+                let members = &borrow_room.members;
+                for (id, user_session_tx) in members {
+                    println!("Sending to user {id}");
+                    let send_to = user_session_tx.0.clone();
+                    send_to
+                        .send(Arc::clone(&msg))
+                        .await
+                        .unwrap_or_else(|_| println!("User {id} is unable to send message"));
+                }
+                drop(borrow_room);
             }
-            drop(borrow_room);
         }
     }
 
@@ -95,9 +111,8 @@ impl Room {
         drop(user.1);
         if self.members.is_empty() {
             println!("Room will close now from Room struct");
-            // self.sender.closed().await;
             let collection: Collection<Message> = self.database.collection("messages");
-            for message in self.messages.iter().skip(self.original_size) {
+            for message in self.messages.iter() {
                 let take_message = message.as_ref();
                 println!("Writing message {take_message:?}");
                 collection.insert_one(take_message).await.unwrap();

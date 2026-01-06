@@ -30,6 +30,7 @@ pub struct App {
     waiting: WaitingRoom,
     room: Option<Room>,
     url: String,
+    close_server: Option<tokio::sync::watch::Sender<bool>>
 }
 
 impl App {
@@ -43,6 +44,7 @@ impl App {
             waiting: WaitingRoom::new(),
             room: None,
             url: base_url,
+            close_server: None
         }
     }
 
@@ -106,11 +108,15 @@ impl App {
         match app_action {
             AppAction::GoToWaitingRoom => {
                 self.room = None;
+                let sender = self.close_server.as_ref();
+                sender.unwrap().send(false).unwrap_or_else(|e| println!("Unable to send close message"));
+                self.close_server = None;
                 self.appstate = AppState::Waiting
             }
             AppAction::GoToRoom(room_name, username) => {
                 // println!("Going to a new room post connection");
-                let room = Room::new(room_name, self.url.to_owned(), username);
+                let (closing_room_sx, closing_room_rx) = tokio::sync::watch::channel(true);
+                let room = Room::new(room_name, self.url.to_owned(), username, closing_room_rx, closing_room_sx.clone());
 
                 if room.is_err() {
                     // println!("Unable to create new room");
@@ -121,6 +127,7 @@ impl App {
                 let room = room.unwrap();
                 self.room = Some(room);
                 self.appstate = AppState::RoomConnected;
+                self.close_server = Some(closing_room_sx);
             }
             AppAction::Quit => {
                 self.exit();

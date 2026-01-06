@@ -1,7 +1,7 @@
 use actix_web::rt;
 use actix_ws::{CloseCode, CloseReason, MessageStream, Session};
 use mongodb::bson::Uuid;
-use std::{fmt::{Display, Formatter}, sync::Arc};
+use std::{fmt::{Display, Formatter}, sync::{Arc, Weak}};
 use tokio::sync::{Mutex, mpsc::{self, Receiver, Sender}};
 
 use crate::{Err, message::Message, roomwebserver::server::Room};
@@ -55,7 +55,7 @@ impl User {
         mut write_session: MessageStream,
         mut user_rx: Receiver<Arc<Message>>,
         shutdown_rx: tokio::sync::watch::Receiver<bool>,
-        room: Arc<Mutex<Room>> 
+        room: Weak<Mutex<Room>> 
     ) {
         let shutdown_rx_1 = shutdown_rx.clone();
         let shutdown_rx_2 = shutdown_rx.clone();
@@ -133,16 +133,18 @@ impl User {
                     }
                 }
             }
-            let mut borrow_room = room.lock().await;
-            let mut guard_user = user.lock().await;
-            borrow_room.disconnect_user(guard_user.user_id).await.unwrap_or_else(|e| {
-                println!("Unable to close disconnect user from room because of {e:?}")
-            });
-            guard_user.disconnect_user().await.unwrap_or_else(|e| {
-                println!("Unable to close user because of {e:?}")
-            });
-            drop(borrow_room);
-            drop(guard_user);
+            if let Some(room) = room.upgrade() {
+                let mut borrow_room = room.lock().await;
+                let mut guard_user = user.lock().await;
+                borrow_room.disconnect_user(guard_user.user_id).await.unwrap_or_else(|e| {
+                    println!("Unable to close disconnect user from room because of {e:?}")
+                });
+                guard_user.disconnect_user().await.unwrap_or_else(|e| {
+                    println!("Unable to close user because of {e:?}")
+                });
+                drop(borrow_room);
+                drop(guard_user);
+            }
         });
     }
 
@@ -162,12 +164,13 @@ impl User {
         
         let sender = sender.unwrap();
         for msg in msgs {
+            println!("Sending message {msg:?}");
             if sender.send(Arc::clone(msg)).await.is_err() {
                 return Err("Unable to send message".into());
             }
-            
+            println!("Succesfully sent message {msg:?}");
         }
-
+        println!("Successuflly sent all initial messages");
         Ok(())
     }
 

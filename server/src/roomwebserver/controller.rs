@@ -69,8 +69,8 @@ pub async fn join_room(
             let (room, room_rx) =
                 Room::spawn_room(Arc::clone(&room_id), room_messages, room_collection.clone());
             let room = Arc::new(Mutex::new(room));
-            let room_clone = Arc::clone(&room);
-            tokio::spawn(async move { Room::run(room_clone, room_rx).await });
+            let weak_room = Arc::downgrade(&room);
+            tokio::spawn(async move { Room::run(weak_room, room_rx).await });
             room
         }
     };
@@ -101,7 +101,7 @@ pub async fn join_room(
         receive_session,
         user_rx,
         shutdown_rx,
-        Arc::clone(&room),
+        Arc::downgrade(&room),
     )
     .await;
 
