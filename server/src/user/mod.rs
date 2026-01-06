@@ -1,5 +1,6 @@
 use actix_web::rt;
 use actix_ws::{CloseCode, CloseReason, MessageStream, Session};
+use mongodb::bson::Uuid;
 use std::{fmt::{Display, Formatter}, sync::Arc};
 use tokio::sync::{Mutex, mpsc::{self, Receiver, Sender}};
 
@@ -9,6 +10,7 @@ use crate::{Err, message::Message, roomwebserver::server::Room};
 pub struct User {
     pub user_id: u32,
     pub username: Arc<String>,
+    pub room_id: Arc<String>,
     pub user_session_tx: mpsc::Sender<Arc<Message>>,
     room_sender: Option<mpsc::Sender<Arc<Message>>>,
     pub shutdown_tx: tokio::sync::watch::Sender<bool>,
@@ -25,6 +27,7 @@ impl User {
     pub fn new(
         user_id: u32,
         username: String,
+        room_id: Arc<String>,
         user_tx: Sender<Arc<Message>>,
         shutdown_tx: tokio::sync::watch::Sender<bool>
     ) -> User {
@@ -35,6 +38,7 @@ impl User {
        User {
             user_id,
             username: Arc::clone(&username),
+            room_id,
             user_session_tx: user_tx,
             room_sender: None,
             shutdown_tx,
@@ -91,6 +95,7 @@ impl User {
         rt::spawn(async move {
             let guard_user = user.lock().await;
             let borrow_username = Arc::clone(&guard_user.username);
+            let borrow_room_id = Arc::clone(&guard_user.room_id);
             let room_info =  guard_user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
             drop(guard_user);
             while let Some(msg) = write_session.recv().await {
@@ -106,7 +111,7 @@ impl User {
                             println!("Message received! {txt}");
                             let txt = txt.to_string();
                             // let room_name = room_name.as_deref().unwrap().clone();
-                            let msg = Arc::new(Message::new(Arc::clone(&borrow_username), txt));
+                            let msg = Arc::new(Message::new(Uuid::new(), Arc::clone(&borrow_username), txt, Arc::clone(&borrow_room_id)));
                             room_info
                                 .send(msg)
                                 .await
@@ -128,22 +133,16 @@ impl User {
                     }
                 }
             }
-            println!("Attempting to claim room");
             let mut borrow_room = room.lock().await;
-            println!("Successfully claimed room");
-            println!("Attempted to claim user");
             let mut guard_user = user.lock().await;
-            println!("Successfully able to claim user");
             borrow_room.disconnect_user(guard_user.user_id).await.unwrap_or_else(|e| {
                 println!("Unable to close disconnect user from room because of {e:?}")
             });
             guard_user.disconnect_user().await.unwrap_or_else(|e| {
                 println!("Unable to close user because of {e:?}")
             });
-            println!("Successfully disconnected user from room");
             drop(borrow_room);
             drop(guard_user);
-            println!("Closing receiver");
         });
     }
 
@@ -182,5 +181,11 @@ impl User {
             println!("Unable to send shutdown message from the receiver {e:?}");
         });
         Ok(())
+    }
+}
+
+impl Drop for User {
+    fn drop(&mut self) {
+        println!("Successfully drop user resource {}", self.username);
     }
 }

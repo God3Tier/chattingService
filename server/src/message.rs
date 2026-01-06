@@ -1,18 +1,24 @@
 use std::sync::Arc;
 
+use mongodb::bson::Uuid;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
+    id: Uuid,
     #[serde(with = "arc_string_serde")]
     pub sender: Arc<String>,
+    #[serde(with = "arc_string_serde")]
+    room_id: Arc<String>,
     content: String,
 }
 
 impl Message {
-    pub fn new(sender: Arc<String>, content: String) -> Message {
+    pub fn new(id: Uuid, sender: Arc<String>, content: String, room_id: Arc<String>) -> Message {
         Message {
+            id,
             sender,
+            room_id,
             content,
         }
     }

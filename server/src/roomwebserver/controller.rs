@@ -5,14 +5,13 @@ use actix_web::{
     web::{self, Payload, Query},
 };
 
+use futures_util::TryStreamExt;
+use mongodb::{Collection, Database, bson::doc};
 use tokio::sync::{Mutex, mpsc};
 
 use crate::{
-    Err, RoomMap, UserMap,
-    dto::RoomInfoDTO,
-    message::Message,
-    roomwebserver::server::Room,
-    user::{User},
+    Err, RoomMap, UserMap, dto::RoomInfoDTO, message::Message, roomwebserver::server::Room,
+    user::User,
 };
 
 // This function is to establish the connection between the client and the server room
@@ -23,6 +22,7 @@ pub async fn join_room(
     details: Query<RoomInfoDTO>,
     rooms: web::Data<RoomMap>,
     users: web::Data<UserMap>,
+    room_collection: web::Data<Database>,
 ) -> Result<HttpResponse, Err> {
     let (res, session, receive_session) = match actix_ws::handle(&req, stream) {
         Ok(tuple) => tuple,
@@ -38,6 +38,8 @@ pub async fn join_room(
     println!("Able to claim room lock");
     let mut guard_user_room = users.lock().await;
     println!("Able to claim the user room");
+
+    let room_id = Arc::new(details.room_id.to_owned());
     let room = match guard_room.get(&details.room_id) {
         Some(room) => {
             println!("Taking room of {:?}", details.room_id);
@@ -46,7 +48,26 @@ pub async fn join_room(
         None => {
             println!("Opening room");
             guard_user_room.insert(details.room_id.to_owned(), Vec::new());
-            let (room, room_rx) = Room::spawn_room(details.room_id.to_owned());
+
+            // Retrieve the message from the db
+            let room_messages: Collection<Message> = room_collection.collection("messages");
+            let arg_format = doc! {"room_id": &details.room_id};
+            let room_messages: Vec<Arc<Message>> = room_messages
+                .find(arg_format)
+                .await
+                .unwrap()
+                .try_collect::<Vec<Message>>()
+                .await
+                .unwrap_or_else(|e| {
+                    println!("No messages found {e:?}");
+                    Vec::new()
+                })
+                .into_iter()
+                .map(Arc::new)
+                .collect();
+            println!("Messages: {room_messages:?}");
+            let (room, room_rx) =
+                Room::spawn_room(Arc::clone(&room_id), room_messages, room_collection.clone());
             let room = Arc::new(Mutex::new(room));
             let room_clone = Arc::clone(&room);
             tokio::spawn(async move { Room::run(room_clone, room_rx).await });
@@ -62,7 +83,13 @@ pub async fn join_room(
     let uuid = rand::random();
     let (user_tx, user_rx) = mpsc::channel::<Arc<Message>>(32);
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);
-    let user = User::new(uuid, details.username.to_owned(), user_tx, shutdown_tx);
+    let user = User::new(
+        uuid,
+        details.username.to_owned(),
+        room_id,
+        user_tx,
+        shutdown_tx,
+    );
     let user = Arc::new(Mutex::new(user));
     borrow_room.add_user(Arc::clone(&user)).await;
     println!("Attempting to drop borrow room");
@@ -86,7 +113,7 @@ pub async fn join_room(
 
     drop(guard_user_room);
     println!("Successfully added user to room!");
-    
+
     Ok(res)
 }
 
