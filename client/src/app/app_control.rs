@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use crossterm::event::{self, Event, KeyEvent};
-use ratatui::{
-    DefaultTerminal,
-    widgets::{Clear},
+use ratatui::{DefaultTerminal, widgets::Clear};
+use tokio::{
+    io,
+    sync::{Mutex, mpsc::Receiver},
 };
-use tokio::{io, sync::{Mutex, mpsc::Receiver}};
 
 use crate::app::{self, appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom};
 
@@ -30,7 +30,7 @@ pub struct App {
     waiting: WaitingRoom,
     room: Option<Room>,
     url: String,
-    close_server: Option<tokio::sync::watch::Sender<bool>>
+    close_server: Option<tokio::sync::watch::Sender<bool>>,
 }
 
 impl App {
@@ -44,7 +44,7 @@ impl App {
             waiting: WaitingRoom::new(),
             room: None,
             url: base_url,
-            close_server: None
+            close_server: None,
         }
     }
 
@@ -78,9 +78,7 @@ impl App {
 
     async fn handle_key(&mut self, key: KeyEvent) -> AppAction {
         match self.appstate {
-            AppState::Waiting => {
-                self.waiting.handle_keys(key)
-            }
+            AppState::Waiting => self.waiting.handle_keys(key),
             AppState::RoomConnected => {
                 let room = self.room.as_mut().unwrap();
                 return room.handle_keys(key).await;
@@ -93,12 +91,8 @@ impl App {
         match self.appstate {
             AppState::Waiting => AppWidget::Waiting(&mut self.waiting),
             AppState::RoomConnected => match &mut self.room {
-                Some(room) => {
-                    AppWidget::RoomConnected(room)
-                }
-                None => {
-                    AppWidget::None
-                },
+                Some(room) => AppWidget::RoomConnected(room),
+                None => AppWidget::None,
             },
             AppState::Closed => AppWidget::Closed,
         }
@@ -109,14 +103,23 @@ impl App {
             AppAction::GoToWaitingRoom => {
                 self.room = None;
                 let sender = self.close_server.as_ref();
-                sender.unwrap().send(false).unwrap_or_else(|e| println!("Unable to send close message"));
+                sender
+                    .unwrap()
+                    .send(false)
+                    .unwrap_or_else(|e| println!("Unable to send close message"));
                 self.close_server = None;
                 self.appstate = AppState::Waiting
             }
             AppAction::GoToRoom(room_name, username) => {
                 // println!("Going to a new room post connection");
                 let (closing_room_sx, closing_room_rx) = tokio::sync::watch::channel(true);
-                let room = Room::new(room_name, self.url.to_owned(), username, closing_room_rx, closing_room_sx.clone());
+                let room = Room::new(
+                    room_name,
+                    self.url.to_owned(),
+                    username,
+                    closing_room_rx,
+                    closing_room_sx.clone(),
+                );
 
                 if room.is_err() {
                     // println!("Unable to create new room");

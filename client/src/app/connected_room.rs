@@ -1,4 +1,4 @@
-use std::{pin::Pin, sync::Arc};
+use std::{sync::Arc};
 
 use crate::{
     Err,
@@ -11,8 +11,7 @@ use ratatui::{Frame, layout::Rect, widgets::Widget};
 use tokio::{
     sync::{
         Mutex,
-        mpsc::{self, Sender},
-        oneshot, watch,
+        mpsc::{self, Sender}
     },
     task,
 };
@@ -180,6 +179,7 @@ impl Room {
 
 impl Drop for Room {
     fn drop(&mut self) {
-        self.closing_room_sx.send(true).unwrap();
+        println!("Dropping room");
+        // self.closing_room_sx.send(true).unwrap();
     }
 }

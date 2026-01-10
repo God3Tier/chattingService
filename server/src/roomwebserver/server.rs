@@ -64,11 +64,7 @@ impl Room {
             .unwrap_or_else(|e| {
                 println!("Unable to send all messages from the room stored prior {e:?}");
             });
-        user.send_intiial_messages(&self.inital_messages)
-            .await
-            .unwrap_or_else(|e| {
-                println!("Unable to send all messages from the room stored prior {e:?}");
-            });
+        
         drop(user);
         println!("Successfully dropped the user");
     }
@@ -119,6 +115,7 @@ impl Room {
             }
             println!("Successfully written message to document base");
             self.is_closed = true;
+            self.messages.clear();
         }
 
         println!("All is fine in paradise");
