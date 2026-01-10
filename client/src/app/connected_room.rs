@@ -81,9 +81,6 @@ impl Room {
             closing_room_sx,
         };
 
-        // if startup_rx.is_empty() {
-        //     return Err("Unable to start room".into());
-        // }
 
         Ok(room)
     }

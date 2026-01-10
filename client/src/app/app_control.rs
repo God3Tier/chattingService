@@ -7,7 +7,12 @@ use tokio::{
     sync::{Mutex, mpsc::Receiver},
 };
 
-use crate::app::{self, appstate::AppWidget, connected_room::Room, disconnected_room::WaitingRoom};
+use crate::app::{
+    self,
+    appstate::AppWidget,
+    connected_room::Room,
+    disconnected_room::{WaitingRoom, WaitingRoomState},
+};
 
 #[derive(Debug)]
 enum AppState {
@@ -50,19 +55,18 @@ impl App {
 
     pub async fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         loop {
+            if self.room.is_none() {
+                self.appstate = AppState::Waiting;
+            } else {
+                self.appstate = AppState::RoomConnected;
+                self.waiting.waiting_room_state = WaitingRoomState::Normal;
+            }
             match &self.appstate {
                 AppState::Closed => {
                     break;
                 }
                 _ => {
                     // println!("{:?}", self.appstate);
-                    let widget = self.as_widget();
-                    terminal
-                        .draw(|f| {
-                            let area = f.area();
-                            widget.render(f, area);
-                        })
-                        .unwrap();
 
                     if event::poll(std::time::Duration::from_millis(16))?
                         && let Event::Key(key) = event::read().unwrap()
@@ -70,6 +74,14 @@ impl App {
                         let action = self.handle_key(key).await;
                         self.handle_event(action).await;
                     }
+
+                    let widget = self.as_widget();
+                    terminal
+                        .draw(|f| {
+                            let area = f.area();
+                            widget.render(f, area);
+                        })
+                        .unwrap();
                 }
             }
         }

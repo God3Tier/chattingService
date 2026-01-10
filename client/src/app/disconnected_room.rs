@@ -11,14 +11,14 @@ use crate::app::{
 };
 
 #[derive(Debug, PartialEq)]
-enum WaitingRoomState {
+pub enum WaitingRoomState {
     Normal,
     LoggingIn,
 }
 
 #[derive(Debug)]
 pub struct WaitingRoom {
-    waiting_room_state: WaitingRoomState,
+    pub waiting_room_state: WaitingRoomState,
     input: String,
     character_indx: usize,
     username: String,

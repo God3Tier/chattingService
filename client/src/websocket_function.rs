@@ -46,7 +46,7 @@ pub async fn start_listening(
         while let Some(res) = user_input_rx.recv().await {
             if *ending_rx.borrow() {
                 let mut file_lock = writer_file_mutex.lock().await;
-                file_lock.write("Received cancel command".as_bytes());
+                file_lock.write_all("Received cancel command".as_bytes()).unwrap_or_default();
                 drop(file_lock);
                 break;
             }
@@ -56,7 +56,7 @@ pub async fn start_listening(
                 Ok(_) => {},
                 Err(e) => {
                     let mut file_lock = writer_file_mutex.lock().await;
-                    file_lock.write("Unable to send message {e:?}".as_bytes());
+                    file_lock.write_all("Unable to send message {e:?}".as_bytes()).unwrap_or_default();
                     drop(file_lock)
                 }
             }
@@ -65,10 +65,10 @@ pub async fn start_listening(
         let mut file_lock = writer_file_mutex.lock().await;
         match write.close().await {
             Ok(_) => {
-                file_lock.write("Writer closed successfully".as_bytes());
+                file_lock.write_all("Writer closed successfully".as_bytes()).unwrap_or_default();
             }, 
             Err(e) => {
-                file_lock.write("Unable to close the write resource {e:?}".as_bytes());
+                file_lock.write_all("Unable to close the write resource {e:?}".as_bytes()).unwrap_or_default();
             }
         }
         drop(file_lock)
@@ -86,7 +86,7 @@ pub async fn start_listening(
                     Ok(_) => {},
                     Err(e) => {
                         let mut file_lock = file_to_write.lock().await;
-                        file_lock.write("Unable to disconnect because of {e:?}".as_bytes());
+                        file_lock.write_all("Unable to disconnect because of {e:?}".as_bytes()).unwrap_or_default();
                         drop(file_lock);
                     }
                 }
@@ -94,12 +94,15 @@ pub async fn start_listening(
             }
             Err(e) => {
                 let mut file_lock = file_to_write.lock().await;
-                file_lock.write("Successful disconnect".as_bytes());
+                file_lock.write_all("Successful disconnect".as_bytes()).unwrap_or_default();
                 drop(file_lock);
             }
         }
     })
     .await;
-
+    
+    let mut file_lock = file_to_write.lock().await;
+    file_lock.write_all("Successful disconnect".as_bytes()).unwrap_or_default();
+    drop(file_lock);
     Ok(())
 }
