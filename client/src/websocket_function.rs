@@ -78,6 +78,9 @@ pub async fn start_listening(
         match message {
             Ok(data) => {
                 let res = Response::new(data.into_data());
+                if res.content.is_none() || res.sender.is_none() {
+                    return;
+                }
                 
                 match server_message_sx
                         .send(res)

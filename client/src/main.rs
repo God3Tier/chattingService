@@ -14,7 +14,7 @@ async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
     // Start ratatui with the websocket function -> 
     let mut terminal = ratatui::init();
-    execute!(stdout(), EnableMouseCapture)?;
+    crossterm::terminal::enable_raw_mode()?;
     let app_result = app::app_control::App::new().run(&mut terminal).await;
     // Remove and move elsewhere -> Moved to when room actually is started
     // websocket_function::start_listening(url, room_id, app_sx).await;

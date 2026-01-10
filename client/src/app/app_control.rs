@@ -67,6 +67,13 @@ impl App {
                 }
                 _ => {
                     // println!("{:?}", self.appstate);
+                    let widget = self.as_widget();
+                    terminal
+                        .draw(|f| {
+                            let area = f.area();
+                            widget.render(f, area);
+                        })
+                        .unwrap();
 
                     if event::poll(std::time::Duration::from_millis(16))?
                         && let Event::Key(key) = event::read().unwrap()
@@ -75,13 +82,6 @@ impl App {
                         self.handle_event(action).await;
                     }
 
-                    let widget = self.as_widget();
-                    terminal
-                        .draw(|f| {
-                            let area = f.area();
-                            widget.render(f, area);
-                        })
-                        .unwrap();
                 }
             }
         }
@@ -113,6 +113,7 @@ impl App {
     async fn handle_event(&mut self, app_action: AppAction) {
         match app_action {
             AppAction::GoToWaitingRoom => {
+                self.appstate = AppState::Waiting;
                 self.room = None;
                 let sender = self.close_server.as_ref();
                 sender
@@ -120,7 +121,6 @@ impl App {
                     .send(false)
                     .unwrap_or_else(|e| println!("Unable to send close message"));
                 self.close_server = None;
-                self.appstate = AppState::Waiting
             }
             AppAction::GoToRoom(room_name, username) => {
                 // println!("Going to a new room post connection");

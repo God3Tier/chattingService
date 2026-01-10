@@ -16,7 +16,7 @@ impl Response {
                 return res;
             }, 
             Err(e) => {
-                println!("Unable to Read message");
+                // println!("Unable to Read message");
                 Response { sender: None, content: None }
             }
         }

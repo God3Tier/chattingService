@@ -63,6 +63,9 @@ impl Room {
         tokio::spawn(async move {
             while let Some(msg) = server_message_rx.recv().await {
                 // Display the derived message here
+                if msg.sender.is_none() || msg.content.is_none() {
+                    break;
+                }
                 let sender = msg.sender.unwrap();
                 let message = msg.content.unwrap();
                 let mut lock_message = clone_messsages.lock().await;
@@ -176,7 +179,7 @@ impl Room {
 
 impl Drop for Room {
     fn drop(&mut self) {
-        println!("Dropping room");
+        // println!("Dropping room");
         // self.closing_room_sx.send(true).unwrap();
     }
 }
