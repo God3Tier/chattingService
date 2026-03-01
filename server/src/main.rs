@@ -85,8 +85,8 @@ pub async fn connect_mongo_db() -> Database {
         "".to_string()
     });
     
-    let generated_uri = format!("mongodb+srv://{db_username}:{db_password}@cluster0.ceigjfo.mongodb.net/?appName=Cluster0");
-    
+    let generated_uri = format!("mongodb+srv://{db_username}:{db_password}@cluster0.tmud1px.mongodb.net/?appName=Cluster0");
+    // println!("{generated_uri}");
     let client = Client::with_uri_str(generated_uri).await.unwrap_or_else(|e| 
         panic!("Unable to connect to database. Please restart client and put the correct information in the env file")
     );

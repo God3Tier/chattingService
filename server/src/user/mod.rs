@@ -1,8 +1,14 @@
 use actix_web::rt;
 use actix_ws::{CloseCode, CloseReason, MessageStream, Session};
 use mongodb::bson::Uuid;
-use std::{fmt::{Display, Formatter}, sync::{Arc, Weak}};
-use tokio::sync::{Mutex, mpsc::{self, Receiver, Sender}};
+use std::{
+    fmt::{Display, Formatter},
+    sync::{Arc, Weak},
+};
+use tokio::sync::{
+    Mutex,
+    mpsc::{self, Receiver, Sender},
+};
 
 use crate::{Err, message::Message, roomwebserver::server::Room};
 
@@ -14,7 +20,7 @@ pub struct User {
     pub user_session_tx: mpsc::Sender<Arc<Message>>,
     room_sender: Option<mpsc::Sender<Arc<Message>>>,
     pub shutdown_tx: tokio::sync::watch::Sender<bool>,
-    pub disconnected: bool
+    pub disconnected: bool,
 }
 
 impl Display for User {
@@ -29,20 +35,19 @@ impl User {
         username: String,
         room_id: Arc<String>,
         user_tx: Sender<Arc<Message>>,
-        shutdown_tx: tokio::sync::watch::Sender<bool>
+        shutdown_tx: tokio::sync::watch::Sender<bool>,
     ) -> User {
         // Session is to send messages into a websocket
-        // MessageStream is to write messages into a websocket
+        // MessageStream is to write messages into a websocket2
         let username = Arc::new(username);
-
-       User {
+        User {
             user_id,
             username: Arc::clone(&username),
             room_id,
             user_session_tx: user_tx,
             room_sender: None,
             shutdown_tx,
-            disconnected: false
+            disconnected: false,
         }
     }
 
@@ -55,7 +60,7 @@ impl User {
         mut write_session: MessageStream,
         mut user_rx: Receiver<Arc<Message>>,
         shutdown_rx: tokio::sync::watch::Receiver<bool>,
-        room: Weak<Mutex<Room>> 
+        room: Weak<Mutex<Room>>,
     ) {
         let shutdown_rx_1 = shutdown_rx.clone();
         let shutdown_rx_2 = shutdown_rx.clone();
@@ -68,15 +73,15 @@ impl User {
                 }) {
                     break;
                 }
-                let msg = &*msg;
+                // let msg = &*msg;
                 session
-                    .text(serde_json::to_string(msg).unwrap_or("message not found".to_string()))
+                    .text(serde_json::to_string(&*msg).unwrap_or("message not found".to_string()))
                     .await
                     .unwrap_or_else(|e| {
                         println!("Channel has been closed! {e:?}");
                     });
             }
-            
+
             println!("Closing sender");
             match session
                 .close(Some(CloseReason {
@@ -88,15 +93,17 @@ impl User {
                 Ok(_) => println!("Closed session successfully!"),
                 Err(e) => println!("Unable to disconnect from server! {e:?}"),
             };
-            
         });
-
 
         rt::spawn(async move {
             let guard_user = user.lock().await;
             let borrow_username = Arc::clone(&guard_user.username);
             let borrow_room_id = Arc::clone(&guard_user.room_id);
-            let room_info =  guard_user.room_sender.as_ref().unwrap_or_else(|| panic!("Unable to receive a sender")).clone();
+            let room_info = guard_user
+                .room_sender
+                .as_ref()
+                .unwrap_or_else(|| panic!("Unable to receive a sender"))
+                .clone();
             drop(guard_user);
             while let Some(msg) = write_session.recv().await {
                 if shutdown_rx_2.has_changed().unwrap_or_else(|e| {
@@ -111,7 +118,12 @@ impl User {
                             println!("Message received! {txt}");
                             let txt = txt.to_string();
                             // let room_name = room_name.as_deref().unwrap().clone();
-                            let msg = Arc::new(Message::new(Uuid::new(), Arc::clone(&borrow_username), txt, Arc::clone(&borrow_room_id)));
+                            let msg = Arc::new(Message::new(
+                                Uuid::new(),
+                                Arc::clone(&borrow_username),
+                                txt,
+                                Arc::clone(&borrow_room_id),
+                            ));
                             room_info
                                 .send(msg)
                                 .await
@@ -136,12 +148,16 @@ impl User {
             if let Some(room) = room.upgrade() {
                 let mut borrow_room = room.lock().await;
                 let mut guard_user = user.lock().await;
-                borrow_room.disconnect_user(guard_user.user_id).await.unwrap_or_else(|e| {
-                    println!("Unable to close disconnect user from room because of {e:?}")
-                });
-                guard_user.disconnect_user().await.unwrap_or_else(|e| {
-                    println!("Unable to close user because of {e:?}")
-                });
+                borrow_room
+                    .disconnect_user(guard_user.user_id)
+                    .await
+                    .unwrap_or_else(|e| {
+                        println!("Unable to close disconnect user from room because of {e:?}")
+                    });
+                guard_user
+                    .disconnect_user()
+                    .await
+                    .unwrap_or_else(|e| println!("Unable to close user because of {e:?}"));
                 drop(borrow_room);
                 drop(guard_user);
             }
@@ -153,19 +169,12 @@ impl User {
     }
 
     /*
-     * What is the point of this function? Still quite unsure 
+     * What is the point of this function? Still quite unsure
      */
     pub async fn send_intiial_messages(&self, msgs: &Vec<Arc<Message>>) -> Result<(), Err> {
-        let sender = self.room_sender.as_ref();
-
-        if sender.is_none() {
-            return Err("User not connected to the room yet".into());
-        }
-        
-        let sender = sender.unwrap();
         for msg in msgs {
             println!("Sending message {msg:?}");
-            if sender.send(Arc::clone(msg)).await.is_err() {
+            if self.user_session_tx.send(Arc::clone(msg)).await.is_err() {
                 return Err("Unable to send message".into());
             }
             println!("Succesfully sent message {msg:?}");
@@ -175,12 +184,12 @@ impl User {
     }
 
     /*
-     * Not sure what else this is supposed to do other than lock it 
+     * Not sure what else this is supposed to do other than lock it
      */
     pub async fn disconnect_user(&mut self) -> Result<(), Err> {
         println!("Disconnecting user!");
         self.disconnected = true;
-        self.shutdown_tx.send(true).unwrap_or_else(|e|{
+        self.shutdown_tx.send(true).unwrap_or_else(|e| {
             println!("Unable to send shutdown message from the receiver {e:?}");
         });
         Ok(())

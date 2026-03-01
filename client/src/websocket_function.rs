@@ -44,31 +44,39 @@ pub async fn start_listening(
         // This is the thread logic to hold the message from the terminal and send it to the server. Should be modified to accomodate
         // app state soon.
         while let Some(res) = user_input_rx.recv().await {
-            if *ending_rx.borrow() {
+            if !*ending_rx.borrow() {
                 let mut file_lock = writer_file_mutex.lock().await;
-                file_lock.write_all("Received cancel command".as_bytes()).unwrap_or_default();
+                file_lock
+                    .write_all("Received cancel command\n".as_bytes())
+                    .unwrap_or_default();
                 drop(file_lock);
                 break;
             }
             let msg = tokio_tungstenite::tungstenite::Message::from(res);
             // println!("{msg:?}");
             match write.send(msg).await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(e) => {
                     let mut file_lock = writer_file_mutex.lock().await;
-                    file_lock.write_all("Unable to send message {e:?}".as_bytes()).unwrap_or_default();
+                    file_lock
+                        .write_all(format!("Unable to send message {e:?}\n").as_bytes())
+                        .unwrap_or_default();
                     drop(file_lock)
                 }
             }
         }
-        
+
         let mut file_lock = writer_file_mutex.lock().await;
         match write.close().await {
             Ok(_) => {
-                file_lock.write_all("Writer closed successfully".as_bytes()).unwrap_or_default();
-            }, 
+                file_lock
+                    .write_all("Writer closed successfully\n".as_bytes())
+                    .unwrap_or_default();
+            }
             Err(e) => {
-                file_lock.write_all("Unable to close the write resource {e:?}".as_bytes()).unwrap_or_default();
+                file_lock
+                    .write_all(format!("Unable to close the write resource {e:?}\n").as_bytes())
+                    .unwrap_or_default();
             }
         }
         drop(file_lock)
@@ -81,31 +89,35 @@ pub async fn start_listening(
                 if res.content.is_none() || res.sender.is_none() {
                     return;
                 }
-                
-                match server_message_sx
-                        .send(res)
-                        .await
-                {
-                    Ok(_) => {},
+
+                match server_message_sx.send(res).await {
+                    Ok(_) => {}
                     Err(e) => {
                         let mut file_lock = file_to_write.lock().await;
-                        file_lock.write_all("Unable to disconnect because of {e:?}".as_bytes()).unwrap_or_default();
+                        file_lock
+                            .write_all(
+                                format!("Unable to disconnect because of {e:?}\n").as_bytes(),
+                            )
+                            .unwrap_or_default();
                         drop(file_lock);
                     }
                 }
-                
             }
             Err(e) => {
                 let mut file_lock = file_to_write.lock().await;
-                file_lock.write_all("Successful disconnect".as_bytes()).unwrap_or_default();
+                file_lock
+                    .write_all(format!("Successful disconnect {e:?}\n").as_bytes())
+                    .unwrap_or_default();
                 drop(file_lock);
             }
         }
     })
     .await;
-    
+
     let mut file_lock = file_to_write.lock().await;
-    file_lock.write_all("Successful disconnect".as_bytes()).unwrap_or_default();
+    file_lock
+        .write_all("Successful disconnect\n".as_bytes())
+        .unwrap_or_default();
     drop(file_lock);
     Ok(())
 }

@@ -59,17 +59,18 @@ impl Room {
             .unwrap_or_else(|e| {
                 println!("Unable to send all messages from the room stored prior {e:?}");
             });
-        user.send_intiial_messages(&self.messages)
-            .await
-            .unwrap_or_else(|e| {
-                println!("Unable to send all messages from the room stored prior {e:?}");
-            });
+        // user.send_intiial_messages(&self.messages)
+        //     .await
+        //     .unwrap_or_else(|e| {
+        //         println!("Unable to send all messages from the room stored prior {e:?}");
+        //     });
         
         drop(user);
         println!("Successfully dropped the user");
     }
 
     pub async fn run(room: Weak<Mutex<Room>>, mut room_rx: Receiver<Arc<Message>>) {
+        println!("ROOM RUNNING FOR {room:?}");
         while let Some(msg) = room_rx.recv().await {
             let temp_read = msg.as_ref();
             println!("Received room message: {temp_read:?}");
@@ -107,14 +108,15 @@ impl Room {
         drop(user.1);
         if self.members.is_empty() {
             println!("Room will close now from Room struct");
+            // println!("{:?}", self.messages);
             let collection: Collection<Message> = self.database.collection("messages");
             for message in self.messages.iter() {
                 let take_message = message.as_ref();
                 println!("Writing message {take_message:?}");
                 collection.insert_one(take_message).await.unwrap();
             }
-            println!("Successfully written message to document base");
             self.is_closed = true;
+            println!("Successfully written message to document base");
             self.messages.clear();
         }
 

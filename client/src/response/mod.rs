@@ -13,7 +13,7 @@ impl Response {
         let json_string = json_bytes.trim_ascii();
         match serde_json::from_slice::<Response>(json_string) {
             Ok(res) => {
-                return res;
+                res
             }, 
             Err(e) => {
                 // println!("Unable to Read message");
