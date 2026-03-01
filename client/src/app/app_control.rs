@@ -81,10 +81,10 @@ impl App {
                         let action = self.handle_key(key).await;
                         self.handle_event(action).await;
                     }
-
                 }
             }
         }
+        println!("Run Ended");
         Ok(())
     }
 
@@ -144,9 +144,8 @@ impl App {
                 self.appstate = AppState::RoomConnected;
                 self.close_server = Some(closing_room_sx);
             }
-            AppAction::Quit => {
-                self.exit();
-            }
+            AppAction::Quit => self.exit(),
+
             AppAction::None => {}
         }
     }

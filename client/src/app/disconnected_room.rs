@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     Frame,
@@ -56,7 +58,11 @@ impl WaitingRoom {
                 KeyCode::Char('4') => {
                     AppAction::GoToRoom("Room4".to_string(), self.username.clone())
                 }
-                KeyCode::Char('q') => AppAction::Quit,
+                KeyCode::Char('q') => {
+                    ratatui::restore();
+                    crossterm::terminal::disable_raw_mode().unwrap();
+                    exit(0);
+                },
                 _ => AppAction::None,
             },
             WaitingRoomState::LoggingIn => {
